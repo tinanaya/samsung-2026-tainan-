@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 三星南紡金馬迎春刮刮樂</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Lunar New Year Palette */
+        :root {
+            --cny-red-deep: #4A0404;
+            --cny-red-main: #8B0000;
+            --cny-gold: #FFD700;
+            --cny-gold-dim: #C5A059;
+        }
+
+        body {
+            background-color: #FFD700;
+            color: white;
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 30%, #FFD700 0%, #FFA000 60%, #B8860B 100%);
+            background-size: 100% 100%;
+        }
+
+        /* --- Realistic Golden Horse (Center) --- */
+        .horse-mask-container {
+            position: fixed;
+            top: 55%; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            max-width: 500px;
+            aspect-ratio: 1/1; 
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.1;
+            
+            -webkit-mask-image: url('https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/horse.svg');
+            mask-image: url('https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/horse.svg');
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            mask-position: center;
+            -webkit-mask-size: contain;
+            mask-size: contain;
+
+            background-color: #8B0000;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(transparent 50%, rgba(139, 0, 0, 0.5) 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- Festive Decoration --- */
+        .festive-decoration {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 50; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .couplet-container { width: 50px; height: 50px; position: relative; margin-bottom: -5px; z-index: 2; }
+        .couplet-diamond {
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            border: 2px solid #FFD700;
+            transform: rotate(45deg);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+        
+        /* 修改：書法字樣式 */
+        .couplet-char {
+            transform: rotate(-45deg); /* 將字轉正 */
+            font-family: 'Ma Shan Zheng', serif; /* 書法字體 */
+            font-size: 34px; 
+            color: #1a1a1a; /* 黑色墨汁風格 */
+            margin-top: -3px; 
+            font-weight: bold;
+        }
+
+        .firecrackers {
+            display: flex; flex-direction: column; align-items: center;
+            animation: sway 3s infinite ease-in-out alternate;
+            transform-origin: top center; z-index: 1;
+        }
+        .firecrackers .string { width: 2px; height: 10px; background-color: #d32f2f; }
+        .cracker {
+            width: 12px; height: 20px;
+            background: linear-gradient(to right, #ef5350, #c62828, #ef5350);
+            margin-top: -4px; border-radius: 2px;
+            border-top: 1px solid #FFD700; border-bottom: 1px solid #FFD700;
+        }
+        .cracker:nth-child(2n) { transform: rotate(15deg) translateX(4px); }
+        .cracker:nth-child(2n+1) { transform: rotate(-15deg) translateX(-4px); }
+        .tassel { width: 4px; height: 20px; background: #d32f2f; margin-top: -2px; border-radius: 0 0 2px 2px; }
+        @keyframes sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+
+        /* Scratch Card */
+        .scratch-container {
+            position: relative; width: 300px; height: 150px; margin: 0 auto;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 215, 0, 0.3);
+            border: 4px solid var(--cny-gold); background-color: #fff;
+        }
+        .prize-text {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #fff 0%, #fff8e1 100%);
+            color: #b71c1c; font-size: 1.25rem; font-weight: bold;
+            text-align: center; padding: 10px; z-index: 1; line-height: 1.3;
+        }
+        canvas { position: absolute; top: 0; left: 0; cursor: grab; }
+        #scratch-canvas { z-index: 2; }
+        #fx-canvas { z-index: 3; pointer-events: none; }
+
+        /* Buttons */
+        .btn-gold {
+            background: linear-gradient(to bottom, #FFD700, #FFA500);
+            color: #8B0000; font-weight: bold;
+            box-shadow: 0 4px 0 #b8860b, 0 5px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s ease; border: 1px solid #FFF;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .btn-gold:active { transform: translateY(4px); box-shadow: 0 0 0 #b8860b, 0 2px 5px rgba(0,0,0,0.3); }
+        
+        .btn-reset {
+            background: linear-gradient(45deg, #424242, #212121) !important;
+            color: white !important; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: all 0.3s ease; border-color: #9e9e9e !important;
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+            border-top: 4px solid var(--cny-gold); width: 30px; height: 30px;
+            animation: spin 1s linear infinite; display: none; margin: 10px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Modal & Prize Box */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: #4a0404; border: 2px solid var(--cny-gold); border-radius: 12px;
+            padding: 20px; width: 90%; max-width: 320px; text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15); transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
+        .prize-box {
+            background-color: rgba(100, 0, 0, 0.6); 
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px; padding: 12px; margin: 12px 0;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
+            text-align: left;
+        }
+        
+        .admin-link {
+            color: #8B0000; font-size: 0.7rem; text-decoration: none;
+            transition: color 0.3s; margin-top: 10px; display: inline-block; cursor: pointer;
+            opacity: 0.7;
+        }
+        .admin-link:hover { opacity: 1; font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-10 relative">
+
+    <div class="horse-mask-container"></div>
+    <div class="festive-decoration">
+        <div class="couplet-container">
+            <div class="couplet-diamond">
+                <span class="couplet-char">福</span>
+            </div>
+        </div>
+        <div class="firecrackers"><div class="string"></div><div class="cracker"></div><div class="cracker"></div><div class="cracker"></div><div class="cracker"></div><div class="cracker"></div><div class="cracker"></div><div class="tassel"></div></div>
+    </div>
+    <div class="vignette"></div>
+
+    <header class="text-center pt-8 pb-4 px-4 relative z-10">
+        <div class="inline-flex items-center justify-center mb-2">
+            <span class="text-3xl mr-2 text-red-800">✦</span>
+            <h1 class="text-4xl font-bold text-red-800 tracking-widest drop-shadow-md">2026 金馬迎春</h1>
+            <span class="text-3xl ml-2 text-red-800">✦</span>
+        </div>
+        <h2 class="text-xl text-red-900 tracking-wider mb-4 font-bold">SAMSUNG 台南南紡旗艦體驗館</h2>
+    </header>
+
+    <main class="max-w-md mx-auto bg-red-950 bg-opacity-90 rounded-2xl p-6 shadow-2xl backdrop-blur-sm border-2 border-yellow-600 m-4 relative z-10">
+        <div class="text-center mb-6">
+            <h3 class="text-xl font-bold text-yellow-400 mb-2 border-b border-yellow-600 inline-block pb-1">【星粉體驗獨享】</h3>
+            <p class="text-yellow-100 text-sm leading-relaxed mb-4 mt-2">新春好運到！<br>來南紡三星，好禮<span class="text-yellow-400 font-bold text-lg">『馬』</span>上帶回家！🐎✨</p>
+            
+            <div class="prize-box border-l-4 border-yellow-500">
+                <p class="text-yellow-400 font-bold mb-2 text-center border-b border-red-800 pb-1">🏆 限量好禮一覽</p>
+                <ul class="space-y-1 text-gray-200 pl-2 text-sm">
+                    <li>⚡ <span class="text-white">ITFIT 迷你行動電源 (支架式)</span></li>
+                    <li>💆 <span class="text-white">ITFIT 腰部熱敷按摩儀</span></li>
+                    <li>🍵 <span class="text-white">LINE FRIENDS 保溫泡茶瓶</span></li>
+                    <li>🥤 <span class="text-white">樂扣樂扣吸管杯</span></li>
+                    <li>🍽️ <span class="text-white">餐具組+矽膠摺疊碗</span></li>
+                    <li>🧳 <span class="text-white">旅行收納袋組</span></li>
+                    <li>👜 <span class="text-white">奧運托特袋</span></li>
+                    <li>📏 <span class="text-white">捲尺+小天使吊飾</span></li>
+                </ul>
+                <p class="text-xs text-yellow-600 text-center mt-2 pt-1 border-t border-red-900">*數量有限，送完為止</p>
+            </div>
+        </div>
+
+        <div id="game-section" class="relative mb-6">
+            <div id="loading" class="loader"></div>
+            <div id="start-overlay" class="absolute inset-0 z-30 flex items-center justify-center bg-black bg-opacity-60 rounded-xl">
+                <button id="start-btn" class="btn-gold px-8 py-3 rounded-full text-lg uppercase tracking-widest text-red-900 shadow-[0_0_15px_rgba(255,215,0,0.6)]">開始刮獎</button>
+            </div>
+            <div class="scratch-container" id="scratch-area" style="opacity: 0.5;">
+                <div class="prize-text" id="prize-result">準備中...</div>
+                <canvas id="scratch-canvas" width="300" height="150"></canvas>
+                <canvas id="fx-canvas" width="300" height="150"></canvas>
+            </div>
+            <p class="text-center text-xs text-red-200 mt-2 font-light">請直接在銀色區域滑動手指刮開</p>
+        </div>
+
+        <div id="claim-section" class="hidden text-center">
+            <p id="congrats-text" class="text-yellow-400 font-bold mb-2 animate-bounce text-xl">恭喜獲得！</p>
+            
+            <button id="action-btn" class="w-full btn-gold hover:opacity-90 text-red-900 font-bold py-3 px-4 rounded border border-yellow-200 mb-2 text-lg shadow-lg">立即兌換 (工作人員專用)</button>
+            <p id="status-text" class="text-xs text-red-300 mt-2">請出示給工作人員核銷，誤按無法補發</p>
+            
+            <div id="redeem-loading" class="loader"></div>
+            
+            <div id="redeem-details" class="hidden mt-4 bg-red-900 bg-opacity-60 p-4 rounded-lg border border-red-700 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 bg-red-800 w-20 h-20 rotate-45"></div>
+                <p class="text-2xl mb-1">✅</p>
+                <p class="text-white font-bold text-lg">已完成核銷</p>
+                <p id="redeem-time" class="text-yellow-500 font-mono text-xs mt-2 border-t border-red-800 pt-2"></p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-lg font-bold text-yellow-400 mb-3">提示</h3>
+            <p id="modal-message" class="text-gray-200 text-sm mb-6 leading-relaxed">確認執行此操作？</p>
+            <div class="flex space-x-3 justify-center">
+                <button id="modal-cancel" class="px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm hover:bg-gray-600">取消</button>
+                <button id="modal-confirm" class="px-4 py-2 rounded bg-yellow-600 text-white text-sm font-bold hover:bg-yellow-500 border border-yellow-400">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center text-xs text-red-900 pb-8 relative z-10">
+        <p>© 2026 Samsung Electronics Taiwan.</p>
+        <p class="mb-4">活動詳情請洽現場工作人員</p>
+        <a href="#" id="admin-sheet-link" class="admin-link">📊 庫存管理後台</a>
+    </footer>
+
+    <script>
+        // CONFIG: 填入您部署好的 GAS Web App URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbzUYhNY9iQLBQFN95hvk8TtsFXQe-EqxFCsUWs34rNDVkMVGDoByuNuMCVceI8r5OAB5A/exec"; 
+        // CONFIG: 填入您的 Google Sheet 編輯網址
+        const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1qqeOJT74MpG8xJ26e8cCuNjLA9sQzTNexOXpBbbqLNw/edit?usp=sharing";
+        
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        const fxCanvas = document.getElementById('fx-canvas'); 
+        const fxCtx = fxCanvas.getContext('2d');
+        
+        const prizeResult = document.getElementById('prize-result');
+        const startBtn = document.getElementById('start-btn');
+        const startOverlay = document.getElementById('start-overlay');
+        const scratchArea = document.getElementById('scratch-area');
+        const loading = document.getElementById('loading');
+        
+        const claimSection = document.getElementById('claim-section');
+        const actionBtn = document.getElementById('action-btn');
+        const statusText = document.getElementById('status-text');
+        const congratsText = document.getElementById('congrats-text');
+        const redeemLoading = document.getElementById('redeem-loading');
+        const redeemDetails = document.getElementById('redeem-details');
+        const redeemTime = document.getElementById('redeem-time');
+
+        // Modal Elements
+        const modal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMsg = document.getElementById('modal-message');
+        const modalConfirmBtn = document.getElementById('modal-confirm');
+        const modalCancelBtn = document.getElementById('modal-cancel');
+        const adminLink = document.getElementById('admin-sheet-link');
+
+        let isDrawing = false; let isRevealed = false; let particles = []; let modalCallback = null; 
+        
+        // Version Key: v6 (Force update to clear cached old prizes)
+        const LS_KEY_PRIZE = 'samsung_2026_prize_v6'; 
+        const LS_KEY_REDEEMED = 'samsung_2026_redeemed_at_v6'; 
+        
+        window.addEventListener('load', () => { initCanvas(); checkHistory(); });
+        adminLink.addEventListener('click', (e) => { e.preventDefault(); window.open(GOOGLE_SHEET_URL, '_blank'); });
+
+        function showModal(title, message, isConfirmType = true, onConfirm = null) {
+            modalTitle.innerText = title; 
+            modalMsg.innerHTML = message; 
+            modalCallback = onConfirm;
+            if(isConfirmType) { modalCancelBtn.style.display = 'block'; modalConfirmBtn.innerText = "確認"; modalConfirmBtn.classList.remove('w-full'); } 
+            else { modalCancelBtn.style.display = 'none'; modalConfirmBtn.innerText = "關閉"; modalConfirmBtn.classList.add('w-full'); }
+            modal.classList.add('active');
+        }
+        function hideModal() { modal.classList.remove('active'); modalCallback = null; }
+        modalCancelBtn.addEventListener('click', hideModal);
+        modalConfirmBtn.addEventListener('click', () => { if (modalCallback) modalCallback(); hideModal(); });
+
+        function checkHistory() {
+            const savedPrize = localStorage.getItem(LS_KEY_PRIZE); 
+            const redeemedAt = localStorage.getItem(LS_KEY_REDEEMED); 
+            if (savedPrize) {
+                prizeResult.innerText = savedPrize; 
+                prizeResult.style.color = savedPrize.includes("銘謝") ? "#666" : "#b71c1c";
+                startOverlay.classList.add('hidden'); scratchArea.style.opacity = '1'; ctx.clearRect(0, 0, canvas.width, canvas.height); claimSection.classList.remove('hidden');
+                
+                if (redeemedAt) { switchToResetState(redeemedAt); } 
+                else { setTimeout(() => confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 }, colors: ['#FFD700', '#D32F2F', '#FFFFFF'] }), 500); }
+            }
+        }
+        
+        actionBtn.addEventListener('click', () => {
+            const currentMode = actionBtn.dataset.mode || 'redeem'; 
+            if (currentMode === 'redeem') {
+                const prize = prizeResult.innerText;
+                if (prize.includes('銘謝') || prize.includes('已送完')) {
+                     completeRedemption("無需核銷");
+                } else {
+                     showModal('工作人員確認', '確定要核銷此獎項嗎？<br>核銷後系統將記錄，無法復原！', true, () => { proceedRedeem(); });
+                }
+            } else {
+                showModal('重置確認', '確定要重置並讓下一位客人使用嗎？', true, () => {
+                    localStorage.removeItem(LS_KEY_PRIZE); localStorage.removeItem(LS_KEY_REDEEMED); location.reload();
+                });
+            }
+        });
+
+        async function proceedRedeem() {
+            if (API_URL.includes("YOUR_GAS_WEB_APP_URL_HERE")) {
+                showModal('測試模式', '目前網址尚未設定，無法連線至後端試算表。\n\n請在 index.html 填入正確的 API URL。', false); return;
+            }
+            const prizeName = prizeResult.innerText; 
+            actionBtn.classList.add('hidden'); redeemLoading.style.display = 'block'; statusText.classList.add('hidden');
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST', body: JSON.stringify({ action: 'redeem', prize: prizeName }), 
+                    redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" },
+                });
+                const data = await response.json();
+                if(data.status === 'success') { completeRedemption(data.time); } 
+                else { showModal('核銷失敗', `錯誤：${data.message}\n是否強制標記為已核銷？`, true, () => { completeRedemption("Offline Force"); }); actionBtn.classList.remove('hidden'); redeemLoading.style.display = 'none'; }
+            } catch (e) {
+                console.error(e);
+                runLocalRedeem();
+            }
+        }
+
+        function runLocalRedeem() {
+             setTimeout(() => {
+                 completeRedemption(new Date().toLocaleString('zh-TW', { hour12: false }) + " (離線)");
+             }, 1000);
+        }
+
+        function completeRedemption(timeStr) { localStorage.setItem(LS_KEY_REDEEMED, timeStr); switchToResetState(timeStr); }
+        
+        function switchToResetState(timeStr) {
+            redeemLoading.style.display = 'none'; actionBtn.classList.remove('hidden'); actionBtn.style.display = 'block';
+            actionBtn.innerText = "重置活動 (下一位)"; 
+            actionBtn.classList.remove('btn-gold', 'text-red-900'); 
+            actionBtn.classList.add('btn-reset', 'text-white'); 
+            actionBtn.dataset.mode = 'reset';
+            
+            statusText.classList.add('hidden'); congratsText.innerText = "兌換完成"; congratsText.classList.remove('animate-bounce'); congratsText.style.color = '#4ade80';
+            redeemDetails.classList.remove('hidden'); redeemTime.innerText = `核銷時間: ${timeStr}`; canvas.style.pointerEvents = 'none';
+        }
+
+        function initCanvas() {
+            const getPos = (e) => { const rect = canvas.getBoundingClientRect(); return { x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top }; };
+            const startDraw = (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); };
+            const moveDraw = (e) => {
+                if (!isDrawing || isRevealed) return; e.preventDefault();
+                ctx.lineTo(getPos(e).x, getPos(e).y); ctx.stroke(); 
+                for(let i=0; i<3; i++) particles.push(new Particle(getPos(e).x, getPos(e).y));
+                checkScratchPercent();
+            };
+            const endDraw = () => { isDrawing = false; };
+            
+            const width = document.getElementById('scratch-area').offsetWidth;
+            const height = document.getElementById('scratch-area').offsetHeight;
+            canvas.width = width; canvas.height = height;
+            if(fxCanvas) { fxCanvas.width = width; fxCanvas.height = height; }
+
+            if (!isRevealed) {
+                ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#C0C0C0'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#a0a0a0'; ctx.font = 'bold 24px Arial'; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText('SAMSUNG 2026', canvas.width/2, canvas.height/2 - 15); 
+                ctx.font = '20px Arial'; ctx.fillText('刮開金馬好禮', canvas.width/2, canvas.height/2 + 20);
+                ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 30; ctx.lineCap = 'round';
+            }
+            canvas.addEventListener('mousedown', startDraw); canvas.addEventListener('mousemove', moveDraw); canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('touchstart', startDraw); canvas.addEventListener('touchmove', moveDraw); canvas.addEventListener('touchend', endDraw);
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 2 - 1; this.speedY = Math.random() * 2 - 0.5;
+                this.color = `rgba(255, 215, 0, ${Math.random() * 0.5 + 0.5})`; this.life = 1.0;
+            }
+            update() { this.x += this.speedX; this.y += this.speedY + 0.2; this.life -= 0.04; this.size *= 0.95; }
+            draw() {
+                if(!fxCtx) return; fxCtx.fillStyle = this.color; fxCtx.globalAlpha = this.life;
+                fxCtx.beginPath(); fxCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2); fxCtx.fill(); fxCtx.globalAlpha = 1.0;
+            }
+        }
+
+        function handleParticles() {
+            if(!fxCanvas || !fxCtx) return;
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update(); particles[i].draw();
+                if (particles[i].life <= 0) { particles.splice(i, 1); i--; }
+            }
+            requestAnimationFrame(handleParticles);
+        }
+        handleParticles();
+
+        function checkScratchPercent() {
+            if (isRevealed) return;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); const pixels = imageData.data; let transparentPixels = 0;
+            for (let i = 0; i < pixels.length; i += 16) { if (pixels[i + 3] < 128) transparentPixels++; }
+            if ((transparentPixels / (pixels.length / 4)) * 4 > 0.5) revealPrize();
+        }
+
+        function revealPrize() {
+            isRevealed = true; canvas.style.opacity = '0'; canvas.style.transition = 'opacity 0.5s ease';
+            claimSection.classList.remove('hidden'); confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#D32F2F', '#FFFFFF'] });
+        }
+
+        function handleSuccess(data) {
+            let finalPrize = data.prize;
+            // 前端過濾：如果後端尚未更新 Config 表導致回傳舊的購物金，強制轉換為參加獎
+            if (finalPrize.includes('購物金') || finalPrize.includes('1,000') || finalPrize.includes('500') || finalPrize.includes('100')) {
+                finalPrize = "捲尺+小天使吊飾";
+            }
+
+            localStorage.setItem(LS_KEY_PRIZE, finalPrize);
+            prizeResult.innerText = finalPrize; 
+            prizeResult.style.color = finalPrize.includes("銘謝") ? "#666" : "#b71c1c";
+            loading.style.display = 'none'; startOverlay.classList.add('hidden'); scratchArea.style.opacity = '1'; 
+            initCanvas();
+        }
+
+        async function fetchPrize() {
+            if (localStorage.getItem(LS_KEY_PRIZE)) { checkHistory(); return; }
+            startBtn.classList.add('hidden'); loading.style.display = 'block';
+            if (API_URL.includes("YOUR_GAS_WEB_APP_URL_HERE")) { runLocalDraw(); return; }
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'draw' }), redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, });
+                const data = await response.json();
+                if (data.status === 'success') handleSuccess(data); else { showModal('錯誤', '發生錯誤: ' + data.message, false); resetUI(); }
+            } catch (error) {
+                console.error("API Error, switching to offline mode:", error);
+                runLocalDraw();
+            }
+        }
+        
+        function runLocalDraw() {
+             setTimeout(() => {
+                const demoPrizes = [
+                    "ITFIT 迷你行動電源", "ITFIT 腰部熱敷按摩儀", "LINE FRIENDS 保溫泡茶瓶",
+                    "樂扣樂扣吸管杯", "餐具組+矽膠摺疊碗", "旅行收納袋組", "奧運托特袋", "捲尺+小天使吊飾"
+                ];
+                const randomPrize = demoPrizes[Math.floor(Math.random() * demoPrizes.length)];
+                handleSuccess({ status: 'success', prize: randomPrize });
+            }, 1000);
+        }
+
+        function resetUI() { loading.style.display = 'none'; startBtn.classList.remove('hidden'); }
+        startBtn.addEventListener('click', fetchPrize);
+    </script>
+</body>
+</html>
