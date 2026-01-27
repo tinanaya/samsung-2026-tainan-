@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2026 三星南紡金馬迎春刮刮樂</title>
+    
+    <!-- Google Analytics 4 (GA4) 設定區塊 -->
+    <!-- [步驟] 請將下方的 G-XXXXXXXXXX (共兩處) 替換為您的 GA4 評估 ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NV1MDMQBY3"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // 設定 GA4 ID
+      gtag('config', 'G-NV1MDMQBY3');
+    </script>
+    <!-- GA4 設定結束 -->
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -276,7 +290,7 @@
 
     <script>
         // CONFIG: 填入您部署好的 GAS Web App URL
-        const API_URL = "https://script.google.com/macros/s/AKfycbzUYhNY9iQLBQFN95hvk8TtsFXQe-EqxFCsUWs34rNDVkMVGDoByuNuMCVceI8r5OAB5A/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbztniQphgKlT680wLqf4flRllzJh8gltoP3vzmkV7KccVAlCfxlcg_jGl35CWye5Uya2g/exec"; 
         // CONFIG: 填入您的 Google Sheet 編輯網址
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1qqeOJT74MpG8xJ26e8cCuNjLA9sQzTNexOXpBbbqLNw/edit?usp=sharing";
         
@@ -363,6 +377,15 @@
             }
             const prizeName = prizeResult.innerText; 
             actionBtn.classList.add('hidden'); redeemLoading.style.display = 'block'; statusText.classList.add('hidden');
+            
+            // GA4 Event: Redeem Start
+            if(typeof gtag === 'function') {
+                gtag('event', 'campaign_redeem_confirm', {
+                    'event_category': 'Engagement',
+                    'event_label': prizeName
+                });
+            }
+
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST', body: JSON.stringify({ action: 'redeem', prize: prizeName }), 
@@ -471,11 +494,28 @@
             prizeResult.style.color = finalPrize.includes("銘謝") ? "#666" : "#b71c1c";
             loading.style.display = 'none'; startOverlay.classList.add('hidden'); scratchArea.style.opacity = '1'; 
             initCanvas();
+            
+            // GA4 Event: Result Revealed
+            if(typeof gtag === 'function') {
+                gtag('event', 'campaign_draw_result', {
+                    'event_category': 'Game',
+                    'event_label': finalPrize,
+                    'prize_name': finalPrize
+                });
+            }
         }
 
         async function fetchPrize() {
             if (localStorage.getItem(LS_KEY_PRIZE)) { checkHistory(); return; }
             startBtn.classList.add('hidden'); loading.style.display = 'block';
+            
+            // GA4 Event: Start Draw
+            if(typeof gtag === 'function') {
+                gtag('event', 'campaign_draw_start', {
+                    'event_category': 'Engagement'
+                });
+            }
+
             if (API_URL.includes("YOUR_GAS_WEB_APP_URL_HERE")) { runLocalDraw(); return; }
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'draw' }), redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, });
