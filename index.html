@@ -84,12 +84,11 @@
             box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
         }
         
-        /* 修改：書法字樣式 */
         .couplet-char {
-            transform: rotate(-45deg); /* 將字轉正 */
-            font-family: 'Ma Shan Zheng', serif; /* 書法字體 */
+            transform: rotate(-45deg); 
+            font-family: 'Ma Shan Zheng', serif; 
             font-size: 34px; 
-            color: #1a1a1a; /* 黑色墨汁風格 */
+            color: #1a1a1a; 
             margin-top: -3px; 
             font-weight: bold;
         }
@@ -277,7 +276,7 @@
 
     <script>
         // CONFIG: 填入您部署好的 GAS Web App URL
-        const API_URL = "https://script.google.com/macros/s/AKfycbztniQphgKlT680wLqf4flRllzJh8gltoP3vzmkV7KccVAlCfxlcg_jGl35CWye5Uya2g/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbzUYhNY9iQLBQFN95hvk8TtsFXQe-EqxFCsUWs34rNDVkMVGDoByuNuMCVceI8r5OAB5A/exec"; 
         // CONFIG: 填入您的 Google Sheet 編輯網址
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1qqeOJT74MpG8xJ26e8cCuNjLA9sQzTNexOXpBbbqLNw/edit?usp=sharing";
         
@@ -462,7 +461,7 @@
 
         function handleSuccess(data) {
             let finalPrize = data.prize;
-            // 前端過濾：如果後端尚未更新 Config 表導致回傳舊的購物金，強制轉換為參加獎
+            // 前端過濾：如果後端回傳舊購物金，強制轉為參加獎
             if (finalPrize.includes('購物金') || finalPrize.includes('1,000') || finalPrize.includes('500') || finalPrize.includes('100')) {
                 finalPrize = "捲尺+小天使吊飾";
             }
@@ -490,11 +489,24 @@
         
         function runLocalDraw() {
              setTimeout(() => {
-                const demoPrizes = [
-                    "ITFIT 迷你行動電源", "ITFIT 腰部熱敷按摩儀", "LINE FRIENDS 保溫泡茶瓶",
-                    "樂扣樂扣吸管杯", "餐具組+矽膠摺疊碗", "旅行收納袋組", "奧運托特袋", "捲尺+小天使吊飾"
-                ];
-                const randomPrize = demoPrizes[Math.floor(Math.random() * demoPrizes.length)];
+                const r = Math.random();
+                // 調整離線機率以符合新庫存比例 (~200 total)
+                // 大獎 5+5+3+2 = 15 (~7.5%)
+                // 托特袋 14 (~7%)
+                // 捲尺 50 (~25%)
+                // 餐具 55 (~28%)
+                // 旅行 60 (~30%)
+                
+                let randomPrize;
+                if (r < 0.025) randomPrize = "ITFIT 迷你行動電源 (支架式)";
+                else if (r < 0.05) randomPrize = "ITFIT 腰部熱敷按摩儀";
+                else if (r < 0.065) randomPrize = "LINE FRIENDS 保溫泡茶瓶";
+                else if (r < 0.075) randomPrize = "樂扣樂扣吸管杯";
+                else if (r < 0.145) randomPrize = "奧運托特袋"; // 14/194
+                else if (r < 0.40) randomPrize = "捲尺+小天使吊飾"; // 50/194
+                else if (r < 0.68) randomPrize = "餐具組+矽膠摺疊碗"; // 55/194
+                else randomPrize = "旅行收納袋組"; // 60/194
+
                 handleSuccess({ status: 'success', prize: randomPrize });
             }, 1000);
         }
